@@ -12,7 +12,7 @@ int accLED=7;
 int disLED=6;
 int sensorPin=14;
 //int flexpin=A1;
-SoftwareSerial gpsSerial(3, 2);
+SoftwareSerial gpsSerial(3,2);
 SoftwareSerial gsmSerial(4,5);
 Adafruit_GPS GPS(&gpsSerial);
 
@@ -22,13 +22,17 @@ void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 boolean smsSent = false;
 
 void setup(){
+  /*pinMode(3,INPUT);
+  pinMode(4,INPUT);
+  pinMode(2,OUTPUT);
+  pinMode(5,OUTPUT);*/
+  
   Serial.begin(9600);
   GPS.begin(9600);
-  gsmSerial.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-    GPS.sendCommand(PGCMD_ANTENNA);
-    useInterrupt(true);
+  GPS.sendCommand(PGCMD_ANTENNA);
+  useInterrupt(true);
 
 
   adxl.powerOn();
@@ -37,8 +41,6 @@ void setup(){
   pinMode(disLED,OUTPUT);
     delay(1000);
   gpsSerial.println(PMTK_Q_RELEASE);
-  
-
 }
 
 SIGNAL(TIMER0_COMPA_vect) {
@@ -86,8 +88,8 @@ void loop(){
   }
   
   
-  Serial.print("distance sensor= ");
-  Serial.println(sensor);
+  //Serial.print("distance sensor= ");
+  //Serial.println(sensor);
   if(sensor >400){
     //digitalWrite(disLED,HIGH);
     tone(disLED,6000, 40);
@@ -101,37 +103,52 @@ void loop(){
   // read data from the GPS
   char c = GPS.read();
 
-  if (GPSECHO)
-    if (c) Serial.print(c);
+  //if (GPSECHO)
+   // if (c) Serial.print(c);
    // delay(10000);
   
   }
   
   // if a sentence is received, we can check the checksum, parse it...
   if (GPS.newNMEAreceived()) {
-    Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
+ //   Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
     if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
       return;  // we can fail to parse a sentence in which case we should just wait for another
   }
   // approximately every 2 seconds or so, print out the current stats
   if (GPS.fix) 
   {
-    Serial.print("Location: ");
-    Serial.print(GPS.latitude, 4); //Serial.print(GPS.lat);
-    Serial.print(", "); 
-    Serial.println(GPS.longitude, 4); //Serial.println(GPS.lon);
-    Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+ //   Serial.print("Location: ");
+ //   Serial.print(GPS.latitude, 4); //Serial.print(GPS.lat);
+ //   Serial.print(", "); 
+ //   Serial.println(GPS.longitude, 4); //Serial.println(GPS.lon);
+ //   Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
     //delay(9000);
   } 
   if( accCrashed && disCrashed )
   {
+    gpsSerial.end();
+    delay(5000);
+    gsmSerial.begin(9600);
+    delay(5000);
     sendTextMessage();
     //smsSent = true;
-    Serial.println("condition satisfied");
     delay(10000);
+    Serial.println("condition satisfied");
+    gsmSerial.end();
+    delay(3000);
+    
+    //start GPS
+    GPS.begin(9600);
+    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+    GPS.sendCommand(PGCMD_ANTENNA);
+    useInterrupt(true);
+    delay(5000);
+    gpsSerial.println(PMTK_Q_RELEASE);
   }  
 
-  Serial.println(smsSent);
+//  Serial.println(smsSent);
    delay(50);
  
 }
